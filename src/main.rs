@@ -23,7 +23,9 @@ const WINDOW_SIZE: usize = 1024;
 const TARGET_FRAME_RATE: f64 = 60.0;
 
 const CLEAR_COLOR: [u8; 4] = [0, 0, 0, 255];
-const SAND_COLOR: [u8; 4] = [200, 200, 100, 255];
+const SAND_COLOR: [u8; 4] = [225, 225, 150, 255];
+const GROUND_COLOR: [u8; 4] = [198, 135, 103, 255];
+const SKY_COLOR: [u8; 4] = [125, 200, 225, 255];
 
 fn main() {
     let mut rng = rand::thread_rng();
@@ -58,6 +60,7 @@ fn main() {
         }
         Event::RedrawRequested(_) => {
             clear_frame(&mut screen, &CLEAR_COLOR);
+            render_background(&mut screen, &GROUND_COLOR, &SKY_COLOR);
             render_sand(&mut screen, &sand, &SAND_COLOR);
 
             screen.render().unwrap();
@@ -116,6 +119,27 @@ fn render_sand(screen: &mut Pixels, sand: &BitArray2D, color: &[u8; 4]) {
     for (x, y) in sand.iter_true() {
         let (row, col) = world_to_screen(x, y);
         set_pixel(screen, row, col, color);
+    }
+}
+
+fn lerp(val_1: u8, val_2: u8, factor: f64) -> u8 {
+    ((1.0 - factor) * val_1 as f64 + factor * val_2 as f64).round() as u8
+}
+
+fn render_background(screen: &mut Pixels, ground_color: &[u8; 4], sky_color: &[u8; 4]) {
+    for row in 0..WORLD_SIZE {
+        let factor = row as f64 / (WORLD_SIZE - 1) as f64;
+
+        let row_color = [
+            lerp(sky_color[0], ground_color[0], factor),
+            lerp(sky_color[1], ground_color[1], factor),
+            lerp(sky_color[2], ground_color[2], factor),
+            255,
+        ];
+
+        for col in 0..WORLD_SIZE {
+            set_pixel(screen, col, row, &row_color)
+        }
     }
 }
 
