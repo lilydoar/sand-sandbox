@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use crate::{
     bitarr::BitArray2D,
     sand::{update_sand, user_input_sand},
+    timer::Timer,
 };
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
@@ -12,9 +15,12 @@ use winit::{
 
 mod bitarr;
 mod sand;
+mod timer;
 
 const WORLD_SIZE: usize = 120;
 const WINDOW_SIZE: usize = 1024;
+
+const TARGET_FRAME_RATE: f64 = 60.0;
 
 const CLEAR_COLOR: [u8; 4] = [0, 0, 0, 255];
 const SAND_COLOR: [u8; 4] = [200, 200, 100, 255];
@@ -40,12 +46,15 @@ fn main() {
     let mut mouse = Mouse::default();
     let mut mode = UserMode::Add;
 
+    let mut clock = Timer::new(Duration::from_secs_f64(1.0 / TARGET_FRAME_RATE));
+
     event_loop.run(move |event, _, control_flow| match event {
         Event::MainEventsCleared => {
-            user_input_sand(&mut sand, &mouse, &mode);
-            sand = update_sand(&sand, &mut rng);
-
-            window.request_redraw();
+            if clock.check_with_reset() {
+                user_input_sand(&mut sand, &mouse, &mode);
+                sand = update_sand(&sand, &mut rng);
+                window.request_redraw();
+            }
         }
         Event::RedrawRequested(_) => {
             clear_frame(&mut screen, &CLEAR_COLOR);
